@@ -1,3 +1,2 @@
-#Проверка ОС
-apt install bash || opkg install bash
+opkg install bash 2>/dev/null || apt install bash 2>/dev/null
 curl -O https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/master/z4r.sh && bash z4r.sh && rm z4r.sh
