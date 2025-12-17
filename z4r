@@ -1,4 +1,4 @@
-opkg update 2>/dev/null || apt update 2>/dev/null
-opkg install bash 2>/dev/null || apt install bash 2>/dev/null
+opkg update 2>/dev/null || apt update 2>/dev/null || apk update 2>/dev/null
+opkg install bash 2>/dev/null || apt install bash 2>/dev/null || apk install bash 2>/dev/null
 mkdir -p /opt
 curl -o /opt/z4r.sh https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/master/z4r.sh && bash /opt/z4r.sh && rm /opt/z4r.sh
