@@ -1,19 +1,19 @@
 #!/bin/sh
 
-BRANCH="master"
+BRANCH="z2r"
 RAW_URL="https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/${BRANCH}"
 API_URL="https://api.github.com/repos/IndeecFOX/zapret4rocket/contents/lib?ref=${BRANCH}"
 INSTALL_DIR="/opt"
-INSTALLER_URL="https://raw.githubusercontent.com/IndeecFOX/z4r/main/z4r"
+INSTALLER_URL="https://raw.githubusercontent.com/AloofLibra/z4r/z2r/z2r"
 LIB_FILES_FALLBACK="ui.sh provider.sh telemetry.sh recommendations.sh netcheck.sh premium.sh strategies.sh submenus.sh actions.sh"
 
-# Определение пути для команды z4r
+# Определение пути для команды z2r
 if [ -d /opt/bin ]; then
-    BIN_PATH="/opt/bin/z4r"
+    BIN_PATH="/opt/bin/z2r"
 elif [ -d /usr/local/bin ] && [ -w /usr/local/bin ]; then
-    BIN_PATH="/usr/local/bin/z4r"
+    BIN_PATH="/usr/local/bin/z2r"
 elif [ -d /usr/bin ] && [ -w /usr/bin ]; then
-    BIN_PATH="/usr/bin/z4r"
+    BIN_PATH="/usr/bin/z2r"
 else
     echo "Ошибка: не найдено подходящее место для установки"
     exit 1
@@ -49,7 +49,7 @@ fi
 # Если запущен из установленной команды - проверяем обновления
 if [ "$SCRIPT_PATH" = "$BIN_PATH" ]; then
     echo "Проверка обновлений установщика..."
-    TEMP_INSTALLER="/tmp/z4r_inst_$$"
+    TEMP_INSTALLER="/tmp/z2r_inst_$$"
 
     if $DL_CMD "$TEMP_INSTALLER" $DL_TIMEOUT "$INSTALLER_URL" 2>/dev/null; then
         if ! cmp "$SCRIPT_PATH" "$TEMP_INSTALLER" >/dev/null 2>&1; then
@@ -65,24 +65,26 @@ if [ "$SCRIPT_PATH" = "$BIN_PATH" ]; then
     fi
 else
     # Первый запуск - установка
-    echo "Установка команды z4r в $BIN_PATH..."
+    echo "Установка команды z2r в $BIN_PATH..."
 
     if [ -f "$SCRIPT_PATH" ]; then
         mv "$SCRIPT_PATH" "$BIN_PATH"
     else 
-            echo "⚠ Не удалось установить команду z4r"
+            echo "⚠ Не удалось установить команду z2r"
     fi
 
-    [ -f "$BIN_PATH" ] && chmod +x "$BIN_PATH" && echo "✓ Команда z4r установлена"
+    [ -f "$BIN_PATH" ] && chmod +x "$BIN_PATH" && echo "✓ Команда z2r установлена"
     echo ""
 fi
 
 echo "=== Обновление zapret4rocket ==="
-mkdir -p "${INSTALL_DIR}/zapret/z4r_lib"
+mkdir -p "${INSTALL_DIR}/zapret2/z2r_lib"
+mkdir -p "${INSTALL_DIR}/zapret2/extra_strats"
+rm -rf "${INSTALL_DIR}/zapret2/extra_strats/TCP" "${INSTALL_DIR}/zapret2/extra_strats/UDP"
 
 # ОПТИМИЗАЦИЯ: Параллельная загрузка списка библиотек
 echo "Загрузка компонентов..."
-TEMP_JSON="/tmp/z4r_json_$$"
+TEMP_JSON="/tmp/z2r_json_$$"
 
 {
     # Загрузка списка библиотек в фоне
@@ -100,26 +102,43 @@ if [ -z "$LIB_FILES" ]; then
 fi
 rm -f "$TEMP_JSON"
 
-# Параллельная загрузка z4r.sh и библиотек
+# Параллельная загрузка z2r.sh и библиотек
 echo "Загрузка библиотек..."
 {
     # Загрузка основного скрипта в фоне
-    if $DL_CMD "${INSTALL_DIR}/z4r.sh" "$RAW_URL/z4r.sh" 2>/dev/null; then
-        chmod +x "${INSTALL_DIR}/z4r.sh"
+    if $DL_CMD "${INSTALL_DIR}/z2r.sh" "$RAW_URL/z2r.sh" 2>/dev/null; then
+        chmod +x "${INSTALL_DIR}/z2r.sh"
     fi
 } &
 for file in $LIB_FILES; do
     {
-        $DL_CMD "${INSTALL_DIR}/zapret/z4r_lib/${file}" "$RAW_URL/lib/${file}" 2>/dev/null 
+        $DL_CMD "${INSTALL_DIR}/zapret2/z2r_lib/${file}" "$RAW_URL/lib/${file}" 2>/dev/null 
     } &
 done
 wait
 
 echo "✓ Компоненты загружены"
 echo ""
+# Загрузка списков стратегий (без нумерованных файлов)
+echo "Загрузка extra_strats list.txt..."
+{
+    $DL_CMD "${INSTALL_DIR}/zapret2/extra_strats/TCP_YT_list.txt" "$RAW_URL/extra_strats/TCP/YT/List.txt" 2>/dev/null
+} &
+{
+    $DL_CMD "${INSTALL_DIR}/zapret2/extra_strats/TCP_RKN_list.txt" "$RAW_URL/extra_strats/TCP/RKN/List.txt" 2>/dev/null
+} &
+{
+    $DL_CMD "${INSTALL_DIR}/zapret2/extra_strats/TCP_GV_list.txt" "$RAW_URL/extra_strats/TCP/GV/List.txt" 2>/dev/null
+} &
+{
+    $DL_CMD "${INSTALL_DIR}/zapret2/extra_strats/UDP_YT_list.txt" "$RAW_URL/extra_strats/UDP/YT/List.txt" 2>/dev/null
+} &
+wait
 
-# Запуск z4r.sh
-echo "=== Запуск z4r.sh ==="
+echo "? extra_strats list.txt загружены"
+echo ""
+# Запуск z2r.sh
+echo "=== Запуск z2r.sh ==="
 cd "${INSTALL_DIR}" || exit 1
 
 # Определяем shell
@@ -132,4 +151,4 @@ else
 fi
 
 # Перенаправляем stdin на терминал если запущено через pipe
-[ -t 0 ] && exec $SHELL_CMD ./z4r.sh "$@" || exec $SHELL_CMD ./z4r.sh "$@" < /dev/tty
+[ -t 0 ] && exec $SHELL_CMD ./z2r.sh "$@" || exec $SHELL_CMD ./z2r.sh "$@" < /dev/tty
