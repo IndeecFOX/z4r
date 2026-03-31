@@ -1,4 +1,24 @@
 opkg update 2>/dev/null || apt update 2>/dev/null || apk update 2>/dev/null
 opkg install bash 2>/dev/null || apt install bash 2>/dev/null || apk add bash 2>/dev/null
 mkdir -p /opt
-curl -o /opt/z4r.sh https://raw.githubusercontent.com/IndeecFOX/z4r/main/z4r && bash /opt/z4r.sh && rm /opt/z4r.sh
+# Скачиваем основной инсталлер в /opt. Если curl не смог, сразу выходим,
+# чтобы не запускать частичный или отсутствующий файл.
+curl -o /opt/z4r.sh https://raw.githubusercontent.com/IndeecFOX/z4r/main/z4r || exit $?
+# Запускаем основной скрипт один раз. Сохраняем код выхода, чтобы поймать
+# возможный segfault (SIGSEGV), который обычно возвращается как 139.
+bash /opt/z4r.sh
+rc=$?
+# Если bash вышел с кодом 139, повторяем запуск после удаления libncurses через opkg.
+# На некоторых Keenetic 5.0.x старые/несовместимые libncurses* вызывают segfault
+# у bash или утилит, которые использует скрипт. Удаление/переустановка часто
+# устраняет проблему. Делаем это только при коде 139, чтобы не было ложных фиксов.
+if [ "$rc" -eq 139 ]; then
+  opkg remove --force-removal-of-dependent-packages libncurses libncursesw 2>/dev/null || true
+  # Повторная попытка после очистки. Если снова упало, возвращаем этот код.
+  bash /opt/z4r.sh
+  rc=$?
+fi
+# Удаляем скачанный скрипт независимо от результата.
+rm -f /opt/z4r.sh
+# Выходим с последним кодом, чтобы вызывающая сторона видела успех/ошибку.
+exit "$rc"
