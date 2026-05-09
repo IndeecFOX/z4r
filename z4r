@@ -2,9 +2,11 @@
 
 BRANCH="master"
 RAW_URL="https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/${BRANCH}"
+MIRROR_URL="https://git.px.rkn.quest/IndeecFOX/plain"
 API_URL="https://api.github.com/repos/IndeecFOX/zapret4rocket/contents/lib?ref=${BRANCH}"
 INSTALL_DIR="/opt"
 INSTALLER_URL="https://raw.githubusercontent.com/IndeecFOX/z4r/main/z4r"
+INSTALLER_MIRROR_URL="https://git.px.rkn.quest/z4r/plain/z4r?h=main"
 LIB_FILES_FALLBACK="ui.sh provider.sh telemetry.sh recommendations.sh netcheck.sh premium.sh strategies.sh submenus.sh actions.sh"
 
 # Определение пути для команды z4r
@@ -37,6 +39,51 @@ else
 fi
 
 # Определение откуда запущен скрипт
+mirror_url() {
+    local path="$1"
+    echo "${MIRROR_URL}/${path}?h=${BRANCH}"
+}
+
+download_url() {
+    local dest="$1"
+    local url="$2"
+
+    $DL_CMD "$dest" $DL_TIMEOUT "$url" 2>/dev/null
+}
+
+download_project_file() {
+    local dest="$1"
+    local path="$2"
+    local tmp="${dest}.tmp.$$"
+
+    mkdir -p "$(dirname "$dest")"
+
+    if download_url "$tmp" "$RAW_URL/$path"; then
+        mv -f "$tmp" "$dest"
+        return 0
+    fi
+
+    echo "GitHub недоступен для $path. Пробую зеркало..."
+    if download_url "$tmp" "$(mirror_url "$path")"; then
+        mv -f "$tmp" "$dest"
+        return 0
+    fi
+
+    rm -f "$tmp"
+    return 1
+}
+
+download_installer() {
+    local dest="$1"
+
+    if download_url "$dest" "$INSTALLER_URL"; then
+        return 0
+    fi
+
+    echo "GitHub недоступен для установщика. Пробую зеркало..."
+    download_url "$dest" "$INSTALLER_MIRROR_URL"
+}
+
 if which readlink >/dev/null 2>&1; then
     SCRIPT_PATH=$(readlink -f "$0" 2>/dev/null || echo "$0")
 elif which realpath >/dev/null 2>&1; then
@@ -50,7 +97,7 @@ if [ "$SCRIPT_PATH" = "$BIN_PATH" ]; then
     echo "Проверка обновлений установщика..."
     TEMP_INSTALLER="/tmp/z4r_inst_$$"
 
-    if $DL_CMD "$TEMP_INSTALLER" $DL_TIMEOUT "$INSTALLER_URL" 2>/dev/null; then
+    if download_installer "$TEMP_INSTALLER"; then
         if ! cmp "$SCRIPT_PATH" "$TEMP_INSTALLER" >/dev/null 2>&1; then
             echo "✓ Найдено обновление установщика"
             cp "$TEMP_INSTALLER" "$BIN_PATH"
@@ -103,16 +150,28 @@ rm -f "$TEMP_JSON"
 echo "Загрузка библиотек..."
 {
     # Загрузка основного скрипта в фоне
-    if $DL_CMD "${INSTALL_DIR}/z4r.sh" "$RAW_URL/z4r.sh" 2>/dev/null; then
+    if download_project_file "${INSTALL_DIR}/z4r.sh" "z4r.sh"; then
         chmod +x "${INSTALL_DIR}/z4r.sh"
     fi
 } &
 for file in $LIB_FILES; do
     {
-        $DL_CMD "${INSTALL_DIR}/zapret/z4r_lib/${file}" "$RAW_URL/lib/${file}" 2>/dev/null 
+        download_project_file "${INSTALL_DIR}/zapret/z4r_lib/${file}" "lib/${file}"
     } &
 done
 wait
+
+if [ ! -s "${INSTALL_DIR}/z4r.sh" ]; then
+    echo "Ошибка: не удалось загрузить z4r.sh"
+    exit 1
+fi
+
+for file in $LIB_FILES; do
+    if [ ! -s "${INSTALL_DIR}/zapret/z4r_lib/${file}" ]; then
+        echo "Ошибка: не удалось загрузить lib/${file}"
+        exit 1
+    fi
+done
 
 echo "✓ Компоненты загружены"
 echo ""
