@@ -28,11 +28,11 @@ fi
 
 # Проверка wget или curl
 if which curl >/dev/null 2>&1; then
-    DL_CMD="curl -sS -L -o"
-    DL_TIMEOUT="--max-time 3"
+    DL_CMD="curl -f -sS -L -o"
+    DL_TIMEOUT="--connect-timeout 10 --max-time 30"
 elif which wget >/dev/null 2>&1; then
     DL_CMD="wget -q -O"
-    DL_TIMEOUT="-T 3"
+    DL_TIMEOUT="-T 30"
 else
     echo "Ошибка: wget или curl не найдены"
     exit 1
