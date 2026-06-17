@@ -2,11 +2,11 @@
 
 BRANCH="master"
 RAW_URL="https://raw.githubusercontent.com/IndeecFOX/zapret4rocket/${BRANCH}"
-MIRROR_URL="https://git.px.rkn.quest/IndeecFOX/plain"
+MIRROR_URL="http://mizulina.shit.vc:666/IndeecFOX/zapret4rocket/${BRANCH}"
 API_URL="https://api.github.com/repos/IndeecFOX/zapret4rocket/contents/lib?ref=${BRANCH}"
 INSTALL_DIR="/opt"
 INSTALLER_URL="https://raw.githubusercontent.com/IndeecFOX/z4r/main/z4r"
-INSTALLER_MIRROR_URL="https://git.px.rkn.quest/z4r/plain/z4r?h=main"
+INSTALLER_MIRROR_URL="http://mizulina.shit.vc:666/IndeecFOX/z4r/main/z4r"
 LIB_FILES_FALLBACK="ui.sh provider.sh telemetry.sh recommendations.sh netcheck.sh premium.sh strategies.sh submenus.sh actions.sh"
 
 # Определение пути для команды z4r
